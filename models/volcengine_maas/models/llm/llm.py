@@ -9,6 +9,7 @@ from dify_plugin.entities.model import (
     ModelType,
     ParameterRule,
     ParameterType,
+    PriceConfig,
 )
 from dify_plugin.entities.model.llm import (
     LLMResult,
@@ -41,11 +42,6 @@ from legacy.errors import (
     MaasError,
     RateLimitErrors,
     ServerUnavailableErrors,
-)
-from models.llm.models import (
-    get_model_config,
-    get_v2_req_params,
-    get_v3_req_params,
 )
 
 logger = logging.getLogger(__name__)
@@ -84,6 +80,28 @@ class VolcengineMaaSLargeLanguageModel(LargeLanguageModel):
             stream,
             user,
         )
+
+    def get_parameter_rules(self, model: str, credentials: dict) -> list[ParameterRule]:
+        # get model schema
+        model_schema = self.get_model_schema(model, credentials)
+        if not model_schema:
+            return []
+
+        # get parameter rules
+        parameter_rules = model_schema.parameter_rules
+        return parameter_rules
+
+    def get_model_mode(self, model: str, credentials: dict = None) -> LLMMode:
+        # get model schema
+        model_schema = self.get_model_schema(model, credentials)
+        if not model_schema:
+            return LLMMode.CHAT
+
+        # get mode
+        mode = model_schema.model_properties.get("mode")
+        if not mode:
+            return LLMMode.CHAT
+        return LLMMode.value_of(mode)
 
     def validate_credentials(self, model: str, credentials: dict) -> None:
         """
@@ -460,11 +478,17 @@ class VolcengineMaaSLargeLanguageModel(LargeLanguageModel):
             tools_calls.append(tool_call)
 
         return tool_call, tools_calls
+
     def get_customizable_model_schema(self, model: str, credentials: dict) -> Optional[AIModelEntity]:
         """
         used to define customizable model schema
         """
-        model_config = get_model_config(credentials)
+        model_schema = self.get_model_schema(model, credentials)
+        if not model_schema:
+            return None
+
+        model_config_properties = model_schema.model_properties or {}
+
         if model.lower().startswith("deepseek-r1"):
             rules = [
                 ParameterRule(
@@ -472,7 +496,7 @@ class VolcengineMaaSLargeLanguageModel(LargeLanguageModel):
                     type=ParameterType.INT,
                     use_template="max_tokens",
                     min=1,
-                    max=model_config.properties.max_tokens,
+                    max=model_config_properties.get("max_tokens"),
                     default=512,
                     label=I18nObject(zh_Hans="最大生成长度", en_US="Max Tokens"),
                 ),
@@ -526,7 +550,7 @@ class VolcengineMaaSLargeLanguageModel(LargeLanguageModel):
                     type=ParameterType.INT,
                     use_template="max_tokens",
                     min=1,
-                    max=model_config.properties.max_tokens,
+                    max=model_config_properties.get("max_tokens"),
                     default=512,
                     label=I18nObject(zh_Hans="最大生成长度", en_US="Max Tokens"),
                 ),
@@ -563,9 +587,9 @@ class VolcengineMaaSLargeLanguageModel(LargeLanguageModel):
 
         model_properties = {}
         model_properties[ModelPropertyKey.CONTEXT_SIZE] = (
-            model_config.properties.context_size
+            model_schema.model_properties.get("context_size")
         )
-        model_properties[ModelPropertyKey.MODE] = model_config.properties.mode.value
+        model_properties[ModelPropertyKey.MODE] = model_schema.model_properties.get("mode")
         entity = AIModelEntity(
             model=model,
             label=I18nObject(en_US=model),
@@ -573,7 +597,8 @@ class VolcengineMaaSLargeLanguageModel(LargeLanguageModel):
             model_type=ModelType.LLM,
             model_properties=model_properties,
             parameter_rules=rules,
-            features=model_config.features,
+            features=model_schema.features,
+            pricing=model_schema.pricing,
         )
         return entity
 

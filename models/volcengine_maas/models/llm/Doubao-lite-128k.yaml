@@ -1,0 +1,15 @@
+model: Doubao-lite-128k
+label:
+  en_US: Doubao-lite-128k
+model_type: llm
+features:
+  - agent-thought
+model_properties:
+  mode: chat
+  context_size: 131072
+  max_tokens: 4096
+pricing:
+  input: "0.0008"
+  output: "0.0010"
+  unit: "0.001"
+  currency: RMB

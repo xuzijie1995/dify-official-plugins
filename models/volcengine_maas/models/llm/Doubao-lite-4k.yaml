@@ -1,0 +1,16 @@
+model: Doubao-lite-4k
+label:
+  en_US: Doubao-lite-4k
+model_type: llm
+features:
+  - agent-thought
+  - tool-call
+model_properties:
+  mode: chat
+  context_size: 4096
+  max_tokens: 4096
+pricing:
+  input: "0.0003"
+  output: "0.0006"
+  unit: "0.001"
+  currency: RMB

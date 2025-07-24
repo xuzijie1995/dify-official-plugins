@@ -1,0 +1,17 @@
+model: Doubao-pro-32k
+label:
+  en_US: Doubao-pro-32k
+model_type: llm
+features:
+  - agent-thought
+  - tool-call
+  - stream-tool-call
+model_properties:
+  mode: chat
+  context_size: 32768
+  max_tokens: 4096
+pricing:
+  input: "0.0008"
+  output: "0.0020"
+  unit: "0.001"
+  currency: RMB

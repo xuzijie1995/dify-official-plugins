@@ -1,0 +1,16 @@
+model: Moonshot-v1-32k
+label:
+  en_US: Moonshot-v1-32k
+model_type: llm
+features:
+  - agent-thought
+  - tool-call
+model_properties:
+  mode: chat
+  context_size: 32768
+  max_tokens: 16384
+pricing:
+  input: "0.0240"
+  output: "0.0240"
+  unit: "0.001"
+  currency: RMB
